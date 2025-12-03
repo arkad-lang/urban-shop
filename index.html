@@ -6,98 +6,381 @@
   <title>Urban Archive</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    body { font-family: -apple-system, sans-serif; padding: 20px; background: #f5f5f5; }
-    .card { background: white; border-radius: 12px; padding: 16px; margin: 12px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    button { background: #0088cc; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-size: 16px; }
-    input, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; }
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #212529;
+      --btn: #0077b6;
+      --btn-hover: #023e7d;
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+      color: var(--text);
+      padding: 16px;
+      margin: 0;
+      min-height: 100vh;
+    }
+    .container { max-width: 600px; margin: 0 auto; }
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .header h2 {
+      font-weight: 700;
+      font-size: 28px;
+      margin: 0;
+      background: linear-gradient(90deg, #0077b6, #00b4d8);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+    .product-grid { display: grid; gap: 16px; }
+    .product-card img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .product-card h3 {
+      font-size: 18px;
+      margin: 8px 0 6px;
+    }
+    .product-card p.price {
+      font-weight: 700;
+      color: #0077b6;
+      margin: 4px 0;
+    }
+    button {
+      background: var(--btn);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      width: 100%;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: var(--btn-hover);
+    }
+    button.secondary {
+      background: #e9ecef;
+      color: #495057;
+    }
+    button.secondary:hover {
+      background: #dee2e6;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .cart-item button {
+      width: auto;
+      padding: 4px 10px;
+      font-size: 14px;
+      border-radius: 6px;
+    }
+    #cart-items { margin-top: 8px; }
+    .step { display: none; }
+    .step.active { display: block; }
   </style>
 </head>
 <body>
-  <h2>🛍 Urban Archive</h2>
+  <div class="container">
+    <!-- Шаг 1: Товары -->
+    <div id="step-products" class="step active">
+      <div class="header">
+        <h2>🛍 Urban Archive</h2>
+      </div>
+      <div id="product-list" class="product-grid"></div>
+      <button id="go-to-cart" class="secondary" style="display:none;">🛒 Перейти в корзину</button>
+    </div>
 
-  <!-- Товары -->
-  <div class="card">
-    <h3>Jordan Свитшот (Asia Fit)</h3>
-    <img src="https://example.com/jordan_sweatshirt.jpg" alt="Jordan Sweatshirt" style="width:100%; border-radius: 8px; margin-bottom: 10px;">
-    <p>✅ Оригинал, проверен лично<br>💰 8 200 ₽</p>
-    <label>Размер:</label>
-    <select id="size">
-      <option value="S">S (44–46)</option>
-      <option value="M">M (48–50)</option>
-      <option value="L" selected>L (50–52)</option>
-      <option value="XL">XL (52–54)</option>
-    </select>
-    <button onclick="addToCart()">Добавить в корзину</button>
+    <!-- Шаг 2: Корзина -->
+    <div id="step-cart" class="step">
+      <button class="secondary" onclick="showStep('products')">← Назад к товарам</button>
+      <div class="card">
+        <h3>🛒 Корзина</h3>
+        <div id="cart-items">Корзина пуста</div>
+        <div id="cart-total" style="font-weight:700; margin-top:12px;"></div>
+        <button onclick="showStep('checkout')" id="checkout-btn" style="margin-top:16px; display:none;">Оформить заказ</button>
+      </div>
+    </div>
+
+    <!-- Шаг 3: Оформление -->
+    <div id="step-checkout" class="step">
+      <button class="secondary" onclick="showStep('cart')">← Назад в корзину</button>
+      <div class="card">
+        <h3>📦 Доставка</h3>
+        <input type="text" id="address" placeholder="Город, улица, дом, кв, индекс">
+        <input type="tel" id="phone" placeholder="Телефон для курьера">
+        <input type="email" id="email" placeholder="Email (необязательно)">
+
+        <h3 style="margin-top:20px;">💳 Оплата</h3>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="secondary" onclick="setPayment('cash')" id="btn-cash">Наличные</button>
+          <button type="button" class="secondary" onclick="setPayment('card')" id="btn-card">Карта при получении</button>
+        </div>
+        <p id="payment-note" style="font-size:14px; color:#666; margin:8px 0;"></p>
+
+        <button onclick="submitOrder()" id="submit-btn" style="margin-top:20px;">✅ Подтвердить заказ</button>
+      </div>
+    </div>
+
+    <!-- Шаг 4: Успех -->
+    <div id="step-success" class="step">
+      <div class="card" style="text-align:center; padding:32px;">
+        <h2>🎉 Заказ принят!</h2>
+        <p style="margin:16px 0;">Скоро я с тобой свяжусь для уточнения деталей.</p>
+        <button onclick="location.reload()" style="margin-top:20px;">Вернуться в магазин</button>
+      </div>
+    </div>
   </div>
-
-  <h3>Корзина:</h3>
-  <div id="cart">
-    <p>Корзина пуста.</p>
-  </div>
-
-  <h3>📦 Адрес доставки</h3>
-  <input type="text" id="address" placeholder="Город, улица, дом, кв, индекс">
-  <input type="tel" id="phone" placeholder="Телефон для курьера">
-  <input type="email" id="email" placeholder="Email для чека (необязательно)">
-
-  <button onclick="submitOrder()">✅ Оформить заказ</button>
 
   <script>
-    let cart = [];
+    // 🔹 ЕДИНСТВЕННОЕ МЕСТО, КУДА ДОБАВЛЯЕШЬ/УДАЛЯЕШЬ ТОВАРЫ
+    const products = [
+      {
+        id: "jordan-sweatshirt",
+        name: "Jordan Свитшот (Asia Fit)",
+        price: 8200,
+        description: "✅ Оригинал, проверен лично",
+        sizes: ["S (44–46)", "M (48–50)", "L (50–52)", "XL (52–54)"],
+        image: "https://images.unsplash.com/photo-1521321205814-9d6749c7048a?auto=format&fit=crop&w=600&h=400"
+      },
+      {
+        id: "nike-hoodie",
+        name: "Nike Толстовка Oversize",
+        price: 9500,
+        description: "🔥 Лимитированная коллекция",
+        sizes: ["M", "L", "XL"],
+        image: "https://images.unsplash.com/photo-1542252975-438d89a0e914?auto=format&fit=crop&w=600&h=400"
+      }
+      // 👈 Добавляй сюда новые товары — просто копируй и меняй данные
+    ];
 
-    // Добавление товара в корзину
-    function addToCart() {
-      const item = "Jordan Свитшот (Asia Fit)";
-      const size = document.getElementById("size").value;
-      const price = 8200;
+    // 🛒 Корзина (сохраняется между сессиями)
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    let selectedPayment = 'cash'; // по умолчанию
 
-      cart.push({ item, size, price });
-
-      // Обновление корзины
-      updateCart();
+    // --- Функции ---
+    function renderProducts() {
+      const el = document.getElementById("product-list");
+      el.innerHTML = products.map(p => `
+        <div class="card product-card" onclick="openProduct('${p.id}')">
+          <img src="${p.image}" alt="${p.name}">
+          <h3>${p.name}</h3>
+          <p class="price">${p.price.toLocaleString()} ₽</p>
+          <p>${p.description}</p>
+        </div>
+      `).join('');
+      updateCartBadge();
     }
 
-    // Обновление отображения корзины
-    function updateCart() {
-      const cartElement = document.getElementById("cart");
+    function openProduct(id) {
+      const p = products.find(x => x.id === id);
+      if (!p) return;
+
+      // Сохраняем текущий шаг (для возврата)
+      window.history.pushState({ step: 'product' }, '', '#product');
+
+      document.body.innerHTML = `
+        <div class="container">
+          <button class="secondary" onclick="history.back()">← Назад</button>
+          <div class="card">
+            <img src="${p.image}" style="width:100%; height:240px; object-fit:cover; border-radius:12px; margin-bottom:16px;">
+            <h2>${p.name}</h2>
+            <p>${p.description}</p>
+            <p class="price">${p.price.toLocaleString()} ₽</p>
+            
+            <label>Размер:</label>
+            <select id="size">${p.sizes.map(s => `<option>${s}</option>`).join('')}</select>
+            
+            <button onclick="addToCart('${p.id}', document.getElementById('size').value)">🛒 Добавить в корзину</button>
+          </div>
+          <div id="mini-cart" class="card" style="margin-top:16px;"></div>
+        </div>
+      `;
+      updateMiniCart();
+    }
+
+    function addToCart(productId, size) {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+
+      cart.push({
+        id: product.id,
+        name: product.name,
+        size: size,
+        price: product.price
+      });
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateMiniCart();
+      alert("✅ Добавлено в корзину!");
+    }
+
+    function updateMiniCart() {
+      const el = document.getElementById("mini-cart");
+      if (!el) return;
 
       if (cart.length === 0) {
-        cartElement.innerHTML = "<p>Корзина пуста.</p>";
+        el.innerHTML = "<p>Корзина пуста</p>";
       } else {
-        let cartText = "<ul>";
-        cart.forEach((product, index) => {
-          cartText += `<li>${product.item} (${product.size}) - ${product.price} ₽ <button onclick="removeFromCart(${index})">Удалить</button></li>`;
-        });
-        cartText += "</ul>";
-        cartText += `<p>Итого: ${cart.reduce((total, item) => total + item.price, 0)} ₽</p>`;
-        cartElement.innerHTML = cartText;
+        const total = cart.reduce((s, i) => s + i.price, 0);
+        el.innerHTML = `
+          <h3>🛒 Корзина (${cart.length})</h3>
+          <div id="cart-items-mini"></div>
+          <p><strong>Итого: ${total.toLocaleString()} ₽</strong></p>
+          <button onclick="showStep('cart')" style="margin-top:10px;">Перейти в корзину</button>
+        `;
+        renderCartItems(document.getElementById("cart-items-mini"));
       }
     }
 
-    // Удаление товара из корзины
+    function updateCartBadge() {
+      const btn = document.getElementById("go-to-cart");
+      if (cart.length > 0) {
+        btn.style.display = 'block';
+        btn.textContent = `🛒 Корзина (${cart.length})`;
+      } else {
+        btn.style.display = 'none';
+      }
+    }
+
+    function renderCartItems(container) {
+      if (cart.length === 0) {
+        container.innerHTML = "Пусто";
+        return;
+      }
+      container.innerHTML = cart.map((item, i) => `
+        <div class="cart-item">
+          <div>
+            <strong>${item.name}</strong><br>
+            <small>${item.size} — ${item.price} ₽</small>
+          </div>
+          <button onclick="removeFromCart(${i})">✕</button>
+        </div>
+      `).join('');
+    }
+
     function removeFromCart(index) {
       cart.splice(index, 1);
-      updateCart();
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCartUI();
+      updateMiniCart();
+      updateCartBadge();
     }
 
-    // Оформление заказа
+    function updateCartUI() {
+      const itemsEl = document.getElementById("cart-items");
+      const totalEl = document.getElementById("cart-total");
+      const btn = document.getElementById("checkout-btn");
+
+      if (cart.length === 0) {
+        itemsEl.innerHTML = "Корзина пуста";
+        totalEl.textContent = "";
+        btn.style.display = "none";
+      } else {
+        renderCartItems(itemsEl);
+        const total = cart.reduce((s, i) => s + i.price, 0);
+        totalEl.innerHTML = `<strong>Итого: ${total.toLocaleString()} ₽</strong>`;
+        btn.style.display = "block";
+      }
+    }
+
+    function setPayment(method) {
+      selectedPayment = method;
+      document.querySelectorAll('#btn-cash, #btn-card').forEach(b => b.classList.remove('secondary'));
+      document.getElementById('btn-' + method).classList.add('secondary');
+      document.getElementById('payment-note').textContent = 
+        method === 'cash' ? 'Оплата наличными курьеру' : 'Оплата картой при получении';
+    }
+
+    function showStep(step) {
+      document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+      document.getElementById('step-' + step).classList.add('active');
+      window.scrollTo(0, 0);
+      if (step === 'cart') updateCartUI();
+      if (step === 'products') renderProducts();
+    }
+
     function submitOrder() {
-      const data = {
+      const addr = document.getElementById("address").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+
+      if (cart.length === 0) {
+        alert("⚠️ Корзина пуста");
+        return;
+      }
+      if (!addr || !phone) {
+        alert("⚠️ Укажите адрес и телефон");
+        return;
+      }
+
+      const order = {
         items: cart,
-        address: document.getElementById("address").value,
-        phone: document.getElementById("phone").value,
-        email: document.getElementById("email").value || ""
+        address: addr,
+        phone: phone,
+        email: document.getElementById("email").value.trim() || null,
+        payment: selectedPayment,
+        timestamp: new Date().toISOString()
       };
 
-      // Отправка данных в Telegram
-      Telegram.WebApp.sendData(JSON.stringify(data));
-      Telegram.WebApp.close();
+      // 📤 Отправка тебе в Telegram
+      Telegram.WebApp.sendData(JSON.stringify(order));
+      
+      // 💾 Сохранение локально (на случай, если WebApp закроется)
+      const history = JSON.parse(localStorage.getItem('orderHistory') || '[]');
+      history.push(order);
+      localStorage.setItem('orderHistory', JSON.stringify(history));
+
+      // ✅ Показ успеха
+      showStep('success');
     }
 
-    // Инициализация
+    // --- Инициализация ---
     Telegram.WebApp.ready();
-    Telegram.WebApp.MainButton.setText("Оформить заказ");
-    Telegram.WebApp.MainButton.show();
+    Telegram.WebApp.expand();
+
+    // Обработка кнопки "Назад" в браузере
+    window.addEventListener('popstate', (e) => {
+      if (e.state && e.state.step === 'product') {
+        showStep('products');
+      }
+    });
+
+    // Запуск
+    renderProducts();
+    updateCartUI();
+    updateCartBadge();
   </script>
 </body>
 </html>
