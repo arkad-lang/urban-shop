@@ -4,71 +4,46 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Urban Archive</title>
+  <!-- 🔑 ОБЯЗАТЕЛЬНО: -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    body { font-family: -apple-system, sans-serif; padding: 20px; background: #f5f5f5; }
-    .card { background: white; border-radius: 12px; padding: 16px; margin: 12px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    button { background: #0088cc; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-size: 16px; }
-    input, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; }
+    body { font-family: sans-serif; padding: 20px; }
+    button { background: #0088cc; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; margin-top: 20px; }
+    select, input { width: 100%; padding: 10px; margin: 8px 0; }
   </style>
 </head>
 <body>
   <h2>🛍 Urban Archive</h2>
+  <h3>Jordan Свитшот (Asia Fit)</h3>
+  <p>✅ Оригинал, проверен лично<br>💰 8 200 ₽</p>
+  
+  <label>Размер:</label>
+  <select id="size">
+    <option value="S">S (44–46)</option>
+    <option value="M">M (48–50)</option>
+    <option value="L" selected>L (50–52)</option>
+    <option value="XL">XL (52–54)</option>
+  </select>
 
-  <div class="card">
-    <h3>Jordan Свитшот (Asia Fit)</h3>
-    <p>✅ Оригинал, проверен лично<br>💰 8 200 ₽</p>
-    <label>Размер:</label>
-    <select id="size">
-      <option value="S">S (44–46)</option>
-      <option value="M">M (48–50)</option>
-      <option value="L" selected>L (50–52)</option>
-      <option value="XL">XL (52–54)</option>
-    </select>
-  </div>
-
-  <div class="card">
-    <h3>📦 Адрес доставки</h3>
-    <input type="text" id="address" placeholder="Город, улица, дом, кв, индекс" value="Санкт-Петербург, 5-й Предпортовый проезд, д. 12, к. 1, кв. 177">
-    <input type="tel" id="phone" placeholder="Телефон для курьера" value="+79123456789">
-    <input type="email" id="email" placeholder="Email для чека (необязательно)">
-  </div>
+  <label>Адрес доставки:</label>
+  <input type="text" id="address" placeholder="Город, улица, дом" value="Санкт-Петербург, 5-й Предпортовый проезд, д. 12">
 
   <button onclick="submitOrder()">✅ Оформить заказ</button>
 
   <script>
+    // 🔑 Инициализация
+    Telegram.WebApp.ready();
+    
     function submitOrder() {
       const data = {
         item: "Jordan Свитшот (Asia Fit)",
         size: document.getElementById("size").value,
-        address: document.getElementById("address").value,
-        phone: document.getElementById("phone").value,
-        email: document.getElementById("email").value || ""
+        address: document.getElementById("address").value
       };
-
-      // Конвертируем адрес в латиницу (упрощённо — для Poizon)
-      data.address_en = data.address
-        .replace(/Санкт-Петербург/g, "Saint Petersburg")
-        .replace(/Москва/g, "Moscow")
-        .replace(/ул\. /g, "ul. ")
-        .replace(/д\. /g, "d. ")
-        .replace(/кв\. /g, "kv. ")
-        .replace(/([А-Яа-я])/g, function(m) {
-          const ru = "АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯя";
-          const en = "AaBbVvGgDdEeEeZhzhZzIiJjKkLlMmNnOoPpRrSsTtUuFfKhkhTstsChchShshSchsch''Yy''EeYuYuYaYa";
-          const idx = ru.indexOf(m);
-          return idx !== -1 ? en[idx] : m;
-        });
-
-      // Отправляем в Telegram-бота
+      
       Telegram.WebApp.sendData(JSON.stringify(data));
       Telegram.WebApp.close();
     }
-
-    // Инициализация
-    Telegram.WebApp.ready();
-    Telegram.WebApp.MainButton.setText("Оформить заказ");
-    Telegram.WebApp.MainButton.show();
   </script>
 </body>
 </html>
